@@ -1,4 +1,4 @@
-# Install script for directory: C:/EMBARCATECH/teste/neopixel_pio
+# Install script for directory: C:/EMBARCATECH/teste/contador_led
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,7 +39,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("C:/EMBARCATECH/teste/neopixel_pio/build/pico-sdk/cmake_install.cmake")
+  include("C:/EMBARCATECH/teste/contador_led/build/pico-sdk/cmake_install.cmake")
 
 endif()
 
@@ -51,5 +51,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "C:/EMBARCATECH/teste/neopixel_pio/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "C:/EMBARCATECH/teste/contador_led/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

@@ -83,7 +83,7 @@ rule ASM_EXECUTABLE_LINKER__bs2_default_Release
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = C:\Users\samue\.pico-sdk\cmake\v3.29.9\bin\cmake.exe --regenerate-during-build -SC:\EMBARCATECH\teste\neopixel_pio -BC:\EMBARCATECH\teste\neopixel_pio\build
+  command = C:\Users\samue\.pico-sdk\cmake\v3.29.9\bin\cmake.exe --regenerate-during-build -SC:\EMBARCATECH\teste\contador_led -BC:\EMBARCATECH\teste\contador_led\build
   description = Re-running CMake...
   generator = 1
 

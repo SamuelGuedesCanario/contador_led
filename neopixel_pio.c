@@ -4,6 +4,8 @@
 #include "hardware/clocks.h"
 #include "hardware/pwm.h"
 #include "ws2818b.pio.h"
+#include "pico/multicore.h"
+
 
 #define LED_PIN_RED 13    // Pino do LED
 #define BLINK_DELAY_MS 6000  // 5 piscadas por minuto (6000 ms de atraso entre as piscadas)
@@ -38,11 +40,15 @@ void pwm_init_buzzer(uint pin);
 int getIndex(int x, int y);
 void atualizarDisplay(int numero);
 void configurarBotoes(void);
+void gpio_irq_handler(uint gpio, uint32_t events);
 
 /* ========== VARIÁVEIS GLOBAIS ========== */
 int contador = 0;  // Armazena o valor atual
+static volatile uint32_t last_time = 0;  // Tempo do último evento de interrupção
+static volatile bool botao_a_pressionado = false;
+static volatile bool botao_b_pressionado = false;
 
-// Sprites dos números (5x5 pixels em vermelho)
+
 // Sprites dos números (5x5 pixels em vermelho)
 int numeros[10][5][5][3] = {
     { // 0
@@ -116,6 +122,9 @@ int numeros[10][5][5][3] = {
         {{255,0,0}, {255,0,0}, {255,0,0}, {255,0,0}, {255,0,0}}
     }
 };
+
+
+
 // Frequências correspondentes a cada número
 int frequencias[10] = {C4, D4, E4, F4, G4, A4, B4, C5, D5, E5};
 
@@ -125,18 +134,19 @@ pixel_t leds[LED_COUNT];
 PIO np_pio;
 uint sm;
 
-
 /* ========== FUNÇÕES DE CONTROLE ========== */
 
-// Configura botões com pull-up interno
+// Configura botões com pull-up interno e interrupções
 void configurarBotoes(void) {
     gpio_init(BOTAO_A);
     gpio_set_dir(BOTAO_A, GPIO_IN);
     gpio_pull_up(BOTAO_A);
+    gpio_set_irq_enabled_with_callback(BOTAO_A, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
 
     gpio_init(BOTAO_B);
     gpio_set_dir(BOTAO_B, GPIO_IN);
     gpio_pull_up(BOTAO_B);
+    gpio_set_irq_enabled_with_callback(BOTAO_B, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
 }
 
 // Atualiza a matriz com o número especificado
@@ -219,40 +229,66 @@ void beep(uint pin, uint freq, uint duration_ms) {
     sleep_ms(50);  // Pequena pausa entre bipes
 }
 
+/* ========== FUNÇÃO DE INTERRUPÇÃO ========== */
+
+void gpio_irq_handler(uint gpio, uint32_t events) {
+    uint32_t current_time = to_us_since_boot(get_absolute_time());
+    
+    // Debouncing: verifica se passou tempo suficiente desde o último evento
+    if (current_time - last_time > 200000) {  // 200 ms de debouncing
+        last_time = current_time;
+
+        if (gpio == BOTAO_A) {
+            botao_a_pressionado = true;
+        } else if (gpio == BOTAO_B) {
+            botao_b_pressionado = true;
+        }
+    }
+}
+
+
+void led_blink_task() {
+    while (1) {
+        gpio_put(LED_PIN_RED, 1);  // Liga o LED
+        sleep_ms(100);             // Aguarda 100ms
+        gpio_put(LED_PIN_RED, 0);  // Desliga o LED
+        sleep_ms(100);             // Aguarda 100ms
+    }
+}
+
+
 
 
 /* ========== FUNÇÃO PRINCIPAL ========== */
 int main() {
     // Inicializações
-    stdio_init_all();              // SDK padrão
-    npInit(LED_PIN);               // Matriz LED
-    pwm_init_buzzer(BUZZER_PIN);   // Buzzer
-    configurarBotoes();            // Botões
-    atualizarDisplay(0);           // Display inicial
+    stdio_init_all();
+    npInit(LED_PIN);
+    pwm_init_buzzer(BUZZER_PIN);
+    configurarBotoes();
+    atualizarDisplay(0);
 
+    // Configura o LED vermelho
     gpio_init(LED_PIN_RED);
     gpio_set_dir(LED_PIN_RED, GPIO_OUT);
 
-    while(1) {
-        // Leitura dos botões
-        bool pressionou = false;
-        
-        if(!gpio_get(BOTAO_B)) {       // Botão +
-            contador = (contador + 1) % 10;
-            pressionou = true;
-        }
-        else if(!gpio_get(BOTAO_A)) {  // Botão -
-            contador = (contador - 1 + 10) % 10;
-            pressionou = true;
-        }
+    // Inicia a tarefa de piscar o LED em outro núcleo
+    multicore_launch_core1(led_blink_task);
 
-        // Atualizações se houve pressionamento
-        if(pressionou) {
+    while(1) {
+        // Verifica se houve pressionamento dos botões
+        if (botao_a_pressionado) {
+            contador = (contador - 1 + 10) % 10;
             atualizarDisplay(contador);
             beep(BUZZER_PIN, frequencias[contador], 200);
-            sleep_ms(300);  // Debounce
+            botao_a_pressionado = false;
+        } else if (botao_b_pressionado) {
+            contador = (contador + 1) % 10;
+            atualizarDisplay(contador);
+            beep(BUZZER_PIN, frequencias[contador], 200);
+            botao_b_pressionado = false;
         }
-        
+
         npWrite();
         sleep_ms(10);
     }

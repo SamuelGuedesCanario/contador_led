@@ -12,6 +12,7 @@ void convertToRGB(int argb, int rgb[3]) {
     rgb[1] = (argb >> 8) & 0xFF;   // Green
 }
 
+
 int main() {
     // Matrizes de entrada com os valores ARGB para duas telas
     int argb_values[NUM_SCREENS][MATRIX_ROWS * MATRIX_COLS] = {

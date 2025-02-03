@@ -39,9 +39,9 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("C:/EMBARCATECH/teste/neopixel_pio/build/pico-sdk/tools/cmake_install.cmake")
-  include("C:/EMBARCATECH/teste/neopixel_pio/build/pico-sdk/src/cmake_install.cmake")
-  include("C:/EMBARCATECH/teste/neopixel_pio/build/pico-sdk/docs/cmake_install.cmake")
+  include("C:/EMBARCATECH/teste/contador_led/build/pico-sdk/tools/cmake_install.cmake")
+  include("C:/EMBARCATECH/teste/contador_led/build/pico-sdk/src/cmake_install.cmake")
+  include("C:/EMBARCATECH/teste/contador_led/build/pico-sdk/docs/cmake_install.cmake")
 
 endif()
 
